@@ -1,22 +1,39 @@
 import p5 from 'p5';
 
-const GRID_ROWS = 10;
-const GRID_COLUMNS = 10;
+const GRID_ROWS = 50;
+const GRID_COLUMNS = 50;
+
+const WIN_WIDTH = 1000;
+const WIN_HEIGHT = 1000;
+const BACKGROUND_COLOR = '#fff'
+const LINE_COLOR = 'black';
+
 
 class Tile {
     edges = [];
     figures = [];
+    rotation = 0;
 
     getFigures() {
         return this.figures;
     }
 
-    getEdges() {
-        return this.edges;
+    getTranslatedEdges() {
+        const rotation90Degree = this.rotation / 90;
+        const edgesToSlice = this.edges.length - rotation90Degree;
+        return this.edges.slice(edgesToSlice).concat(this.edges.slice(0, edgesToSlice));
+    }
+
+    rotate90Degrees() {
+        this.rotation += 90;
+    }
+
+    getRotationDegrees() {
+        return this.rotation;
     }
 }
 
-class HorizontalTile extends Tile {
+class StraightTile extends Tile {
     edges = [
         0, 1, 0, 1
     ]
@@ -28,19 +45,7 @@ class HorizontalTile extends Tile {
     ]
 }
 
-class VerticalTile extends Tile {
-    edges = [
-        1, 0, 1, 0
-    ]
-    figures = [
-        [
-            0.5, 0,
-            0.5, 1
-        ]
-    ]
-}
-
-class Corner0Tile extends Tile {
+class CornerTile extends Tile {
     edges = [
         1, 1, 0, 0
     ]
@@ -49,45 +54,6 @@ class Corner0Tile extends Tile {
             0.5, 0.0,
             0.5, 0.5,
             1, 0.5
-        ],
-    ]
-}
-
-class Corner90Tile extends Tile {
-    edges = [
-        0, 1, 1, 0
-    ]
-    figures = [
-        [
-            1, 0.5,
-            0.5, 0.5,
-            0.5, 1
-        ],
-    ]
-}
-
-class Corner180Tile extends Tile {
-    edges = [
-        0, 0, 1, 1
-    ]
-    figures = [
-        [
-            0.5, 1,
-            0.5, 0.5,
-            0.0, 0.5
-        ],
-    ]
-}
-
-class Corner270Tile extends Tile {
-    edges = [
-        1, 0, 0, 1
-    ]
-    figures = [
-        [
-            0.0, 0.5,
-            0.5, 0.5,
-            0.5, 0.0
         ],
     ]
 }
@@ -104,6 +70,56 @@ class CrossTile extends Tile {
         [
             0.5, 0.0,
             0.5, 1.0,
+        ],
+    ]
+}
+
+class TTile extends Tile {
+    edges = [
+        1, 1, 0, 1
+    ]
+    figures = [
+        [
+            0.0, 0.5,
+            1, 0.5,
+        ],
+        [
+            0.5, 0.0,
+            0.5, 0.5,
+        ],
+    ]
+}
+
+class ClosedTile extends Tile {
+    edges = [
+        0, 0, 0, 0
+    ]
+    figures = [
+        [
+            0.33, 0.33,
+            0.66, 0.33,
+            0.66, 0.66,
+            0.33, 0.66,
+            0.33, 0.33,
+        ],
+    ]
+}
+
+class EndTile extends Tile {
+    edges = [
+        1, 0, 0, 0
+    ]
+    figures = [
+        [
+            0.5, 0.00,
+            0.5, 0.33,
+        ],
+        [
+            0.33, 0.33,
+            0.66, 0.33,
+            0.66, 0.66,
+            0.33, 0.66,
+            0.33, 0.33,
         ],
     ]
 }
@@ -129,21 +145,30 @@ class Cell {
         return this.collapsedTile;
     }
 
+    forceCollapse(){
+        this.collapsed = true;
+        this.collapsedTile = this.possibleTiles[Math.floor(Math.random() * this.possibleTiles.length)]
+        this.possibleTiles = [];
+    }
+
     collapse(neigbouringCells) {
         for (let i = 0; i < neigbouringCells.length; i++) {
             const neighbouringCell = neigbouringCells[i];
-            if (neighbouringCell === null) {
-                continue;
+            if (neighbouringCell && neighbouringCell.getCollapsed()) {
+                const neighbouringEdge = neighbouringCell.getTile().getTranslatedEdges()[(i + 2) % 4]
+                this.possibleTiles = this.possibleTiles.filter(function (possibleTile) {
+                    return possibleTile.getTranslatedEdges()[i] === neighbouringEdge
+                })
             }
-            if (neighbouringCell.getCollapsed()) {
-                const neighbouringEdge = neighbouringCell.getTile().getEdges()[(i + 2) % 4]
-                this.possibleTiles = this.possibleTiles.filter(function(possibleTile){
-                    return possibleTile.getEdges()[i] === neighbouringEdge
+            if (neighbouringCell === null) {
+                this.possibleTiles = this.possibleTiles.filter(function (possibleTile) {
+                    return possibleTile.getTranslatedEdges()[i] === 0
                 })
             }
         }
         this.collapsed = true;
         this.collapsedTile = this.possibleTiles[Math.floor(Math.random() * this.possibleTiles.length)]
+        this.possibleTiles = [];
     }
 }
 
@@ -157,16 +182,44 @@ class WaveFunctionCollapse {
         this.columns = columns;
         const totalCells = rows * columns;
         for (let i = 0; i < totalCells; i++) {
-            this.cells.push(new Cell([
-                new HorizontalTile(),
-                new VerticalTile(),
-                new Corner0Tile(),
-                new Corner90Tile(),
-                new Corner180Tile(),
-                new Corner270Tile(),
+            const originalTiles = [
+                new StraightTile(),
+                new CornerTile(),
                 new CrossTile(),
-            ]));
+                new TTile(),
+                new ClosedTile(),
+                new EndTile()
+            ];
+            const allTiles = this.prepareTiles(originalTiles);
+            this.cells.push(new Cell(allTiles));
         }
+    }
+
+    prepareTiles(originalTiles) {
+        const allTiles = [];
+        for (let i in originalTiles) {
+            let uniqueTile = originalTiles[i];
+            for (let j = 0; j < 4; j++) {
+                allTiles.push(uniqueTile);
+                uniqueTile = this.clone(uniqueTile);
+                uniqueTile.rotate90Degrees();
+            }
+        }
+        const distinctTiles = [];
+        var distinctValues = []
+        for (var i = 0; i < allTiles.length; i++) {
+            const currentTile = allTiles[i];
+            const edges = currentTile.getTranslatedEdges();
+            if (distinctValues.indexOf(edges)) {
+                distinctValues.push(edges);
+                distinctTiles.push(currentTile)
+            }
+        }
+        return distinctTiles;
+    }
+
+    clone(obj) {
+        return Object.assign(Object.create(Object.getPrototypeOf(obj)), obj);
     }
 
     collapse() {
@@ -212,19 +265,16 @@ class WaveFunctionCollapse {
 
 const waveFunctionCollapse = new WaveFunctionCollapse(GRID_ROWS, GRID_COLUMNS);
 
-const WIN_WIDTH = 800;
-const WIN_HEIGHT = 800;
-const BACKGROUND_COLOR = '#fff'
-const LINE_COLOR = 'black';
-
 const s = p => {
     p.setup = function () {
         p.createCanvas(WIN_WIDTH, WIN_HEIGHT);
         p.background(BACKGROUND_COLOR)
-        p.noLoop();
+        p.frameRate(60)
+        // p.noLoop();
     };
 
     p.draw = function () {
+        waveFunctionCollapse.collapseSingle();
         const cells = waveFunctionCollapse.getCells();
         if (cells.length === 0) {
             throw new Error('There must be more than 0 cells')
@@ -235,7 +285,7 @@ const s = p => {
             for (let column in cells[row]) {
                 const cell = cells[row][column];
                 if (cell.getCollapsed()) {
-                    const cellGraphics = p.createGraphics(cellWidth, cellHeight)
+                    let cellGraphics = p.createGraphics(cellWidth, cellHeight)
                     cellGraphics.background(BACKGROUND_COLOR);
                     cellGraphics.stroke(LINE_COLOR);
                     cellGraphics.strokeWeight(1);
@@ -250,12 +300,22 @@ const s = p => {
                         }
                         cellGraphics.endShape();
                     }
-                    p.image(cellGraphics, cellWidth * column, cellHeight * row)
+                    p.angleMode(p.DEGREES);
+                    p.push();
+                    p.translate((cellWidth * column) + (cellWidth / 2), (cellHeight * row) + (cellHeight / 2));
+                    p.rotate(tile.getRotationDegrees())
+                    p.image(cellGraphics, -0.5 * cellWidth, -0.5 * cellHeight)
+                    p.pop()
+                    cellGraphics.remove();
+                    // p.rect(cellWidth * column, cellHeight * row, cellWidth, cellHeight)
                 }
             }
         }
+        p.textSize(10);
+        p.rect(0, 0, 45, 15);
+        const fps = Math.round((1000 / p.deltaTime) * 10) / 10;
+        p.text('fps ' + fps, 5, 10);
     };
-
     p.mousePressed = () => {
         waveFunctionCollapse.collapseSingle();
         p.redraw();
