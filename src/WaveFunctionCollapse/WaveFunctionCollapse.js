@@ -74,12 +74,12 @@ class WaveFunctionCollapse {
             cellsToPropagate = this.getCellsToPropagate();
         }
 
-    };
+    }
 
     getCellsToPropagate() {
         return this.cells.filter(function (cell) {
             return cell.getPropagates() === true;
-        })
+        });
     }
 
     collapseCells(cells) {
@@ -91,7 +91,7 @@ class WaveFunctionCollapse {
             for (let i = 0; i < neighbouringCells.length; i++) {
                 const neighbouringCell = neighbouringCells[i];
                 if (neighbouringCell && !neighbouringCell.getCollapsed()) {
-                    neighbouringCell.setPropagates(true)
+                    neighbouringCell.setPropagates(true);
                 }
             }
         }
@@ -114,7 +114,7 @@ class WaveFunctionCollapse {
     sortCellsByEntropyAsc(cells) {
         return cells.sort(function (a, b) {
             return a.getPossibleTiles().length < b.getPossibleTiles().length;
-        })
+        });
     }
 
     getUncollapsedCells(cells) {

@@ -263,7 +263,7 @@ function shuffleTileWeights()
     }
 }
 const waveFunctionCollapse = new WaveFunctionCollapse(GRID_ROWS, GRID_COLUMNS, originalTiles);
-shuffleTileWeights(originalTiles)
+shuffleTileWeights(originalTiles);
 waveFunctionCollapse.collapse();
 const s = p => {
     p.setup = function () {

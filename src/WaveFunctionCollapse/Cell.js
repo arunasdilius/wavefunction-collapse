@@ -68,7 +68,7 @@ class Cell {
             for (let i = 0; i < neighbouringCells.length; i++) {
                 const neighbouringCell = neighbouringCells[i];
                 if (neighbouringCell && !neighbouringCell.getCollapsed()) {
-                    neighbouringCell.setPropagates(true)
+                    neighbouringCell.setPropagates(true);
                 }
             }
         }
