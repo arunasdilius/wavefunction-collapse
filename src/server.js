@@ -1,11 +1,10 @@
-const express = require('express');
-const webpack = require('webpack');
+import express from "express";
 
-const app = express()
-const port = 3000
+const app = express();
+const port = 3000;
 
-app.get('/', (req, res) => {
-  res.send(`
+app.get("/", (req, res) => {
+    res.send(`
   <!doctype html>
   <head>
   <title>Our Funky HTML Page</title>
@@ -18,11 +17,11 @@ app.get('/', (req, res) => {
   </main>
   </body>
   </html>
-`)
-})
+`);
+});
 
-app.use(express.static('dist'))
+app.use(express.static("dist"));
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+    console.log(`Example app listening on port ${port}`);
+});
