@@ -1,11 +1,11 @@
 class Tile {
     weight = 1;
     edges = [];
-    figures = [];
+    shapes = [];
     rotation = 0;
 
-    getFigures() {
-        return this.figures;
+    getShapes() {
+        return this.shapes;
     }
 
     getWeight() {

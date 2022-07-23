@@ -1,7 +1,7 @@
 import p5 from "p5";
 
-const GRID_ROWS = 100;
-const GRID_COLUMNS = 100;
+const GRID_ROWS = 200;
+const GRID_COLUMNS = 200;
 
 const WIN_WIDTH = 1000;
 const WIN_HEIGHT = 1000;
@@ -17,55 +17,10 @@ class StraightTile extends Tile {
     edges = [
         0, 1, 0, 1
     ];
-    figures = [
+    shapes = [
         [
             0, 0.5,
             1, 0.5
-        ]
-    ];
-}
-class StraightDoubleTile extends Tile {
-    edges = [
-        0, 2, 0, 2
-    ];
-    figures = [
-        [
-            0, 0.4,
-            1, 0.4
-        ],
-        [
-            0, 0.6,
-            1, 0.6
-        ]
-    ];
-}
-class StraightSingleToDoubleTile extends Tile {
-    edges = [
-        0, 2, 0, 1
-    ];
-    figures = [
-        [
-            0, 0.5,
-            1, 0.4
-        ],
-        [
-            0, 0.5,
-            1, 0.6
-        ]
-    ];
-}
-class StraightDoubleEnd extends Tile {
-    edges = [
-        0, 0, 0, 2
-    ];
-    figures = [
-        [
-            0, 0.4,
-            0.5, 0.5
-        ],
-        [
-            0, 0.6,
-            0.5, 0.5
         ]
     ];
 }
@@ -75,7 +30,7 @@ class CornerTile extends Tile {
     edges = [
         1, 1, 0, 0
     ];
-    figures = [
+    shapes = [
         [
             0.5, 0.0,
             0.5, 0.5,
@@ -89,7 +44,7 @@ class DiagonalCornerTile extends Tile {
     edges = [
         1, 1, 0, 0
     ];
-    figures = [
+    shapes = [
         [
             0.5, 0.0,
             1, 0.5
@@ -102,7 +57,7 @@ class CrossTile extends Tile {
     edges = [
         1, 1, 1, 1
     ];
-    figures = [
+    shapes = [
         [
             0.0, 0.5,
             1, 0.5,
@@ -119,7 +74,7 @@ class CrossDiagonalTile extends Tile {
     edges = [
         1, 1, 1, 1
     ];
-    figures = [
+    shapes = [
         [
             0.5, 0.0,
             0.5, 0.33,
@@ -151,7 +106,7 @@ class TTile extends Tile {
     edges = [
         1, 1, 0, 1
     ];
-    figures = [
+    shapes = [
         [
             0.0, 0.5,
             1, 0.5,
@@ -168,7 +123,7 @@ class VTile extends Tile {
     edges = [
         1, 1, 0, 1
     ];
-    figures = [
+    shapes = [
         [
             0.0, 0.5,
             0.5, 0.0,
@@ -182,7 +137,7 @@ class ClosedTile extends Tile {
     edges = [
         0, 0, 0, 0
     ];
-    figures = [
+    shapes = [
         [
             0.33, 0.33,
             0.66, 0.33,
@@ -198,7 +153,7 @@ class EmptyTile extends Tile {
     edges = [
         0, 0, 0, 0
     ];
-    figures = [
+    shapes = [
         [],
     ];
 }
@@ -208,7 +163,7 @@ class EndTile extends Tile {
     edges = [
         1, 0, 0, 0
     ];
-    figures = [
+    shapes = [
         [
             0.5, 0.00,
             0.5, 0.33,
@@ -232,9 +187,6 @@ function shuffle(a) {
 }
 
 const originalTiles = [
-    // new StraightDoubleTile(),
-    // new StraightSingleToDoubleTile(),
-    // new StraightDoubleEnd(),
     new StraightTile(),
     new CornerTile(),
     new CrossTile(),
@@ -261,20 +213,22 @@ function shuffleTileWeights()
     for (let tileIndex in originalTiles) {
         originalTiles[tileIndex].weight = randoms[tileIndex];
     }
+    return originalTiles;
 }
-const waveFunctionCollapse = new WaveFunctionCollapse(GRID_ROWS, GRID_COLUMNS, originalTiles);
 shuffleTileWeights(originalTiles);
-waveFunctionCollapse.collapse();
+const waveFunctionCollapse = new WaveFunctionCollapse(GRID_ROWS, GRID_COLUMNS, originalTiles);
+
+// waveFunctionCollapse.collapse();
 const s = p => {
     p.setup = function () {
         p.createCanvas(WIN_WIDTH, WIN_HEIGHT);
         p.background(BACKGROUND_COLOR);
         p.frameRate(140);
-        p.noLoop();
+        // p.noLoop();
     };
 
     p.draw = function () {
-        // waveFunctionCollapse.iterate();
+        waveFunctionCollapse.iterate();
         const cells = waveFunctionCollapse.getCells();
         if (cells.length === 0) {
             throw new Error("There must be more than 0 cells");
@@ -291,18 +245,23 @@ const s = p => {
                     p.noFill();
                     p.translate((cellWidth * column), (cellHeight * row));
                     const tile = cell.getTile();
-                    const tileFigures = tile.getFigures();
-                    p.angleMode(p.DEGREES);
-                    p.translate((cellWidth / 2), (cellHeight / 2));
-                    p.rotate(tile.getRotationDegrees());
-                    p.translate(-(cellWidth / 2), -(cellHeight / 2));
-                    for (let figureIndex in tileFigures) {
-                        const figure = tileFigures[figureIndex];
-                        p.beginShape();
-                        for (let coordinate = 0; coordinate < figure.length; coordinate += 2) {
-                            p.vertex(figure[coordinate] * cellWidth, figure[coordinate + 1] * cellHeight);
+                    if(tile){
+                        const tileFigures = tile.getShapes();
+                        p.angleMode(p.DEGREES);
+                        p.translate((cellWidth / 2), (cellHeight / 2));
+                        p.rotate(tile.getRotationDegrees());
+                        p.translate(-(cellWidth / 2), -(cellHeight / 2));
+                        for (let figureIndex in tileFigures) {
+                            const figure = tileFigures[figureIndex];
+                            p.beginShape();
+                            for (let coordinate = 0; coordinate < figure.length; coordinate += 2) {
+                                p.vertex(figure[coordinate] * cellWidth, figure[coordinate + 1] * cellHeight);
+                            }
+                            p.endShape();
                         }
-                        p.endShape();
+                    }else{
+                        p.stroke(ERROR_COLOR);
+                        p.rect(0, 0, cellWidth, cellHeight);
                     }
                     p.pop();
                     cell.setRendered(true);

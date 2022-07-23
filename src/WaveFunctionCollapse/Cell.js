@@ -1,7 +1,7 @@
 class Cell {
     propagates = false;
     collapsed = false;
-    collapsedTile;
+    collapsedTile = null;
     possibleTiles = [];
 
     constructor(allTiles) {
@@ -44,7 +44,7 @@ class Cell {
         const originalPossibleTilesLength = this.possibleTiles.length;
         for (let i = 0; i < neighbouringCells.length; i++) {
             const neighbouringCell = neighbouringCells[i];
-            if (neighbouringCell) {
+            if (neighbouringCell && neighbouringCell.getPossibleTiles().length) {
                 const possibleNeighbouringTiles = neighbouringCell.getPossibleTiles();
                 const possibleNeighbouringEdges = [];
                 for (let tileIndex in possibleNeighbouringTiles) {
@@ -77,6 +77,9 @@ class Cell {
     collapse() {
         this.setPropagates(false);
         this.setCollapsed(true);
+        if(this.possibleTiles.length === 0){
+            return;
+        }
         let weights = [];
         for (let l = 0; l < this.possibleTiles.length; l++) {
             weights = weights.concat(Array(this.possibleTiles[l].getWeight()).fill(l));
