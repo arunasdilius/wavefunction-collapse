@@ -26,7 +26,6 @@ const serverConfig = {
 const clientConfig = {
     target: 'web',
     entry: {
-        'index': ['./src/index.js'],
         'WaveFunctionCollapseUI': ['./src/WaveFunctionCollapseUI.js'],
     },
     module: {
