@@ -1,12 +1,24 @@
 <template>
-  <div class="container-fluid py-3">
-    <div class="border p-3">
-      <h1>
+  <div class="container-fluid p-2">
+    <div class="border p-2">
+      <h1 class="px-2 border-bottom">
         Wave Function Collapse
       </h1>
-      <div class="row border-top">
+      <div class="row">
         <div class="col-md-3 col-lg-2">
-          <div class="mb-3">
+          <button class="btn btn-primary my-2"
+                  type="button"
+                  @click="handleGenerate"
+                  :disabled="loading">
+            Generate
+          </button>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" v-model="instant" id="instantInput" checked>
+            <label class="form-check-label" for="instantInput">
+              Instant
+            </label>
+          </div>
+          <div class="mb-2">
             <label for="resolutionWidthInput"
                    class="form-label">
               Resolution width (px)
@@ -22,7 +34,7 @@
                    type="number"
                    min="1">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="resolutionHeightInput"
                    class="form-label">
               Resolution height (px)
@@ -38,7 +50,7 @@
                    type="number"
                    min="1">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="gridColumnsInput"
                    class="form-label">
               Grid columns
@@ -49,7 +61,7 @@
                    type="number"
                    min="1">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="gridRowsInput"
                    class="form-label">
               Grid rows
@@ -60,7 +72,7 @@
                    type="number"
                    min="1">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="backgroundColorInput"
                    class="form-label">
               Background color
@@ -70,7 +82,7 @@
                    id="backgroundColorInput"
                    type="text">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="strokeColorInput"
                    class="form-label">
               Stroke color
@@ -80,10 +92,10 @@
                    id="strokeColorInput"
                    type="text">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="strokeWeightInput"
                    class="form-label">
-              Stroke color
+              Stroke weight
             </label>
             <input v-model.number="strokeWeight"
                    class="form-control"
@@ -94,7 +106,7 @@
           <p v-if="resolutionWidth > maxResolutionWidth || resolutionHeight > maxResolutionHeight">
             Careful //@todo
           </p>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="maxFramerateInput"
                    class="form-label">
               Max framerate
@@ -106,7 +118,7 @@
                    min="1"
                    :disabled="instant">
           </div>
-          <div class="mb-3">
+          <div class="mb-2">
             <label for="framerateInput"
                    class="form-label">
               Current framerate
@@ -116,35 +128,41 @@
                    id="framerateInput"
                    readonly>
           </div>
-          <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" v-model="instant" id="instantInput" checked>
-            <label class="form-check-label" for="instantInput">
-              Instant
-            </label>
-          </div>
-          <div v-for="(tile, tileIndex) in tileset" :key="tileIndex" class="mb-3">
+        </div>
+        <div class="vr p-0"></div>
+        <div class="col-md-3 col-lg-2">
+          <button class="btn btn-primary my-2"
+                  type="button"
+                  @click="handleRandomizeTilesetWeights">
+            Randomize weights
+          </button>
+          <div v-for="(tile, tileIndex) in tileset" :key="tileIndex" class="mb-2">
             <label class="form-label">
-              {{ tile.constructor.name }} ({{ tile.weight }})
+              {{ tile.name }} ({{ tile.weight }})
             </label>
-            <input v-model.number="tile.weight"
+            <input :value="tile.weight"
+                   @input="handleWeightInput($event.target.value, tileIndex)"
                    class="form-range"
                    type="range"
                    min="1"
                    :max="maxTileWeight">
           </div>
-          <button class="btn btn-primary"
-                  type="button"
-                  @click="handleRandomizeTilesetWeights">
-            Randomize weights
-          </button>
-          <button class="btn btn-primary"
-                  type="button"
-                  @click="handleGenerate">
-            Generate
-          </button>
         </div>
         <div class="vr p-0"></div>
-        <div class="col overflow-scroll" ref="p5canvas">
+        <div class="col">
+          <div v-show="!loading" class="h-100 w-100 overflow-scroll position-relative">
+            <div ref="p5canvas" class="position-absolute">
+            </div>
+          </div>
+          <div v-if="loading"
+               class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border"
+                 style="width: 5rem; height: 5rem;"
+                 role="status">
+              <span class="sr-only">
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -165,27 +183,30 @@ import WaveFunctionCollapse from "../WaveFunctionCollapse/WaveFunctionCollapse";
 import p5 from "p5";
 import p5Sketch from "../WaveFunctionCollapse/p5Sketch";
 
+let waveFunctionCollapse = null;
+let p5SketchInstance = null;
+let p5Instance = null;
+let tileset = null;
 export default {
   name: "Index",
   data: () => (
       {
+        loading: false,
         maxTileWeight: 100,
         maxResolutionWidth: 1000,
         maxResolutionHeight: 1000,
-        resolutionWidth: 800,
-        resolutionHeight: 800,
+        resolutionWidth: 1000,
+        resolutionHeight: 1000,
         maxGridColumns: 200,
         maxGridRows: 200,
-        gridColumns: 50,
-        gridRows: 50,
+        gridColumns: 100,
+        gridRows: 100,
         backgroundColor: '#fff',
         strokeColor: '#000',
         strokeWeight: 1,
-        instant: false,
+        instant: true,
         maxFramerate: 140,
         tileset: [],
-        waveFunctionCollapse: null,
-        p5: null,
         framerate: 0,
       }
   ),
@@ -193,38 +214,53 @@ export default {
     this.resetTileset();
   },
   methods: {
+    handleWeightInput(weight, tileIndex) {
+      const newValue = parseInt(weight);
+      tileset[tileIndex].weight = newValue;
+      this.tileset[tileIndex].weight = newValue;
+    },
     handleGenerate() {
-      this.waveFunctionCollapse = new WaveFunctionCollapse(this.gridRows, this.gridColumns, this.tileset);
+      this.loading = true;
+      this.$forceUpdate();
+      // It seems that force update, next tick do not work to render the loading
+      setTimeout(() => {
+        this.performWaveFunctionCollapse();
+      }, 100);
+    },
+    performWaveFunctionCollapse() {
+      waveFunctionCollapse = new WaveFunctionCollapse(this.gridRows, this.gridColumns, tileset);
       if (this.instant) {
-        this.waveFunctionCollapse.collapse();
+        waveFunctionCollapse.collapse();
       }
-      if(!this.p5){
-        this.p5 = new p5((p) => {
-          const config = {
-            resolutionWidth: this.resolutionWidth,
-            resolutionHeight: this.resolutionHeight,
-            backgroundColor: this.backgroundColor,
-            maxFramerate: this.maxFramerate,
-            strokeColor: this.strokeColor,
-            strokeWeight: this.strokeWeight
-          }
-          const p5SketchInstance = new p5Sketch(p, config, this.iterateWaveFunctionCollapse)
+      this.loading = false;
+      const config = {
+        resolutionWidth: this.resolutionWidth,
+        resolutionHeight: this.resolutionHeight,
+        backgroundColor: this.backgroundColor,
+        maxFramerate: this.maxFramerate,
+        strokeColor: this.strokeColor,
+        strokeWeight: this.strokeWeight
+      }
+      if (!p5Instance) {
+        p5Instance = new p5((p) => {
+          p5SketchInstance = new p5Sketch(p, config, this.iterateWaveFunctionCollapse)
           p.setup = () => p5SketchInstance.setup();
           p.draw = () => p5SketchInstance.draw();
         }, this.$refs.p5canvas)
-      }else{
-        this.p5.setup();
+      } else {
+        p5SketchInstance.config = config;
+        p5Instance.setup();
       }
     },
     iterateWaveFunctionCollapse(p) {
       this.framerate = Math.round((1000 / p.deltaTime) * 10) / 10;
       if (!this.instant) {
-        this.waveFunctionCollapse.iterate();
+        waveFunctionCollapse.iterate();
       }
-      return this.waveFunctionCollapse.getCells();
+      return waveFunctionCollapse.getCells();
     },
     resetTileset() {
-      const tileset = [
+      tileset = [
         new StraightTile(),
         new CornerTile(),
         new CrossTile(),
@@ -237,7 +273,10 @@ export default {
         new VTile(),
       ];
       for (let tilesetIndex in tileset) {
-        this.tileset.push(tileset[tilesetIndex]);
+        this.tileset.push({
+          name: tileset[tilesetIndex].constructor.name,
+          weight: tileset[tilesetIndex].weight,
+        });
       }
     },
     shuffle(a) {
@@ -250,15 +289,15 @@ export default {
     handleRandomizeTilesetWeights() {
       let randomPool = this.maxTileWeight;
       let randoms = [];
-      for (let i = 0; i < this.tileset.length; i++) {
+      for (let i = 0; i < tileset.length; i++) {
         let random = Math.floor(Math.random() * randomPool);
         randomPool -= random;
         random = random ? random : 1;
         randoms.push(random);
       }
       randoms = this.shuffle(randoms);
-      for (let tileIndex in this.tileset) {
-        this.tileset[tileIndex].weight = randoms[tileIndex];
+      for (let tileIndex in tileset) {
+        this.handleWeightInput(randoms[tileIndex], tileIndex)
       }
     }
   }

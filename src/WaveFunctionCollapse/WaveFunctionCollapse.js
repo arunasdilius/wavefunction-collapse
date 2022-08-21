@@ -5,7 +5,7 @@ class WaveFunctionCollapse {
     rows = [];
     columns;
 
-    constructor(rows, columns, tiles) {
+    constructor (rows, columns, tiles) {
         this.rows = rows;
         this.columns = columns;
         const totalCells = rows * columns;

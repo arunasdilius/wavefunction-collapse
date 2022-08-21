@@ -24,6 +24,8 @@ class p5Sketch {
         this.p.createCanvas(this.config.resolutionWidth, this.config.resolutionHeight);
         this.p.background(this.config.backgroundColor);
         this.p.frameRate(this.config.maxFramerate);
+        this.p.stroke(this.config.strokeColor);
+        this.p.strokeWeight(this.config.strokeWeight);
     }
 
     draw() {
@@ -31,32 +33,32 @@ class p5Sketch {
         if (cells.length === 0) {
             throw new Error("There must be more than 0 cells");
         }
-        const cellHeight = this.p.width / cells.length;
-        const cellWidth = this.p.height / cells[0].length;
+        const cellHeight = this.p.height / cells.length;
+        const cellWidth = this.p.width / cells[0].length;
         for (let row in cells) {
             for (let column in cells[row]) {
                 const cell = cells[row][column];
                 if (!cell.rendered && cell.getCollapsed()) {
                     this.p.push();
-                    this.p.stroke(this.config.strokeColor);
-                    this.p.strokeWeight(this.p.strokeWeight);
                     this.p.noFill();
                     this.p.translate((cellWidth * column), (cellHeight * row));
                     const tile = cell.getTile();
                     if (tile) {
-                        const tileFigures = tile.getShapes();
                         this.p.angleMode(this.p.DEGREES);
                         this.p.translate((cellWidth / 2), (cellHeight / 2));
                         this.p.rotate(tile.getRotationDegrees());
-                        this.p.translate(-(cellWidth / 2), -(cellHeight / 2));
-                        for (let figureIndex in tileFigures) {
-                            const figure = tileFigures[figureIndex];
-                            this.p.beginShape();
-                            for (let coordinate = 0; coordinate < figure.length; coordinate += 2) {
-                                this.p.vertex(figure[coordinate] * cellWidth, figure[coordinate + 1] * cellHeight);
-                            }
-                            this.p.endShape();
+                        if ([90, 270].indexOf(tile.getRotationDegrees()) !== -1) {
+                            this.p.translate(-(cellHeight / 2), -(cellWidth / 2));
+                        }else{
+                            this.p.translate(-(cellWidth / 2), -(cellHeight / 2));
                         }
+                        let x = cellWidth;
+                        let y = cellHeight;
+                        if ([90, 270].indexOf(tile.getRotationDegrees()) !== -1) {
+                            x = cellHeight;
+                            y = cellWidth;
+                        }
+                        this.drawTileShape(tile, x, y);
                     } else {
                         this.p.stroke(this.config.errorColor);
                         this.p.rect(0, 0, cellWidth, cellHeight);
@@ -66,7 +68,19 @@ class p5Sketch {
                 }
             }
         }
-    };
+    }
+
+    drawTileShape(tile, x, y) {
+        const tileFigures = tile.getShapes();
+        for (let figureIndex in tileFigures) {
+            const figure = tileFigures[figureIndex];
+            this.p.beginShape();
+            for (let coordinate = 0; coordinate < figure.length; coordinate += 2) {
+                this.p.vertex(figure[coordinate] * x, figure[coordinate + 1] * y);
+            }
+            this.p.endShape();
+        }
+    }
 }
 
 export default p5Sketch;
