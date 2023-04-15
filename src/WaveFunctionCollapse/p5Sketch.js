@@ -35,10 +35,12 @@ class p5Sketch {
         }
         const cellHeight = this.p.height / cells.length;
         const cellWidth = this.p.width / cells[0].length;
+        let cellsRendered = 0;
         for (let row in cells) {
             for (let column in cells[row]) {
                 const cell = cells[row][column];
                 if (!cell.rendered && cell.getCollapsed()) {
+                    cellsRendered++;
                     this.p.push();
                     this.p.noFill();
                     this.p.translate((cellWidth * column), (cellHeight * row));
@@ -67,6 +69,9 @@ class p5Sketch {
                     cell.setRendered(true);
                 }
             }
+        }
+        if(cellsRendered === 0){
+            this.p.noLoop();
         }
     }
 

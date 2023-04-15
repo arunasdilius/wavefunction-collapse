@@ -159,8 +159,6 @@
             <div class="spinner-border"
                  style="width: 5rem; height: 5rem;"
                  role="status">
-              <span class="sr-only">
-              </span>
             </div>
           </div>
         </div>
@@ -251,6 +249,7 @@ export default {
         p5SketchInstance.config = config;
         p5Instance.setup();
       }
+      p5SketchInstance.p.loop()
     },
     iterateWaveFunctionCollapse(p) {
       this.framerate = Math.round((1000 / p.deltaTime) * 10) / 10;
