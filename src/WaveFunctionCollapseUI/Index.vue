@@ -150,8 +150,21 @@
         </div>
         <div class="vr p-0"></div>
         <div class="col">
+          <div>
+            <button class="btn btn-primary my-2 me-2"
+                    type="button"
+                    @click="handleScaleDown">
+              +
+            </button>
+            <button class="btn btn-primary my-2 me-2"
+                    type="button"
+                    @click="handleScaleUp">
+              -
+            </button>
+            <p class="d-inline-block">Scale: {{ canvasScale }}</p>
+          </div>
           <div v-show="!loading" class="h-100 w-100 overflow-scroll position-relative">
-            <div ref="p5canvas" class="position-absolute">
+            <div ref="p5canvas" class="position-absolute" :style="canvasStyle">
             </div>
           </div>
           <div v-if="loading"
@@ -185,6 +198,8 @@ let waveFunctionCollapse = null;
 let p5SketchInstance = null;
 let p5Instance = null;
 let tileset = null;
+
+const SCALE_STEP = 0.1
 export default {
   name: "Index",
   data: () => (
@@ -206,12 +221,27 @@ export default {
         maxFramerate: 140,
         tileset: [],
         framerate: 0,
+        canvasScale: 1,
       }
   ),
   created() {
     this.resetTileset();
   },
+  computed: {
+    canvasStyle () {
+      return {
+        'transform-origin': 'top left',
+        transform: 'scale(' + this.canvasScale + ')'
+      }
+    },
+  },
   methods: {
+    handleScaleDown() {
+      this.canvasScale += SCALE_STEP;
+    },
+    handleScaleUp() {
+      this.canvasScale -= SCALE_STEP;
+    },
     handleWeightInput(weight, tileIndex) {
       const newValue = parseInt(weight);
       tileset[tileIndex].weight = newValue;
