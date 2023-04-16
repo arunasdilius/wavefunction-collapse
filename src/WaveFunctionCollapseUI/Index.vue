@@ -131,11 +131,19 @@
         </div>
         <div class="vr p-0"></div>
         <div class="col-md-3 col-lg-2">
-          <button class="btn btn-primary my-2"
-                  type="button"
-                  @click="handleRandomizeTilesetWeights">
-            Randomize weights
-          </button>
+          <div class="btn-group" aria-label="Basic checkbox toggle button group">
+            <button class="btn btn-primary"
+                    type="button"
+                    @click="handleRandomizeTilesetWeights">
+              Randomize weights
+            </button>
+            <input v-model="cumulativeRandomization"
+                   type="checkbox"
+                   class="btn-check"
+                   id="randomizePool"
+                   autocomplete="off">
+            <label class="btn btn-outline-primary" for="randomizePool">Cumulative</label>
+          </div>
           <div v-for="(tile, tileIndex) in tileset" :key="tileIndex" class="mb-2">
             <label class="form-label">
               {{ tile.name }} ({{ tile.weight }})
@@ -161,7 +169,11 @@
                     @click="handleScaleUp">
               -
             </button>
-            <p class="d-inline-block">Scale: {{ canvasScale }}</p>
+            <p class="d-inline-block">Scale: {{ roundedCanvasScale }}</p>
+            <div class="mb-3">
+              <label for="formFile" class="form-label">Default file input example</label>
+              <input class="form-control" type="file" ref="imageLoader">
+            </div>
           </div>
           <div v-show="!loading" class="h-100 w-100 overflow-scroll position-relative">
             <div ref="p5canvas" class="position-absolute" :style="canvasStyle">
@@ -222,25 +234,76 @@ export default {
         tileset: [],
         framerate: 0,
         canvasScale: 1,
+        uploadedImage: new Image(),
+        cumulativeRandomization: true,
       }
   ),
   created() {
     this.resetTileset();
   },
+  mounted() {
+    this.$refs.imageLoader.addEventListener('change', this.handleFileUpload, false);
+  },
   computed: {
     canvasStyle () {
       return {
         'transform-origin': 'top left',
-        transform: 'scale(' + this.canvasScale + ')'
+        transform: 'scale(' + this.roundedCanvasScale + ')'
       }
     },
+    roundedCanvasScale(){
+      return Math.round(this.canvasScale * 100) / 100;
+    }
   },
   methods: {
+    // @todo WIP
+    handleFileUpload(event){
+      var reader = new FileReader();
+      reader.onload = (event) => {
+        this.uploadedImage.onload = function(){
+          // @todo this will not work in node alone
+          const canvas = document.createElement('canvas');
+          document.body.appendChild(canvas)
+          canvas.width = this.uploadedImage.width;
+          canvas.height = this.uploadedImage.height;
+          canvas.style.zIndex = 8;
+          canvas.style.position = "absolute";
+          canvas.style.border = "1px solid";
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(this.uploadedImage,0,0);
+          let imgData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+          // Converting to grayscale
+          let pixels = imgData.data;
+          for (var i = 0; i < pixels.length; i += 4) {
+            const lightness = parseInt((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3);
+            pixels[i] = lightness;
+            pixels[i + 1] = lightness;
+            pixels[i + 2] = lightness;
+          }
+          ctx.putImageData(imgData, 0, 0);
+          console.log(imgData);
+          // Preparing the scene for wave function collapse
+          this.resolutionWidth = this.uploadedImage.width;
+          this.resolutionHeight = this.uploadedImage.height;
+          this.handleGenerate();
+        }.bind(this)
+        this.uploadedImage.src = event.target.result;
+      }
+      const file = event.target.files[0];
+      const acceptedImageTypes = ['image/jpg', 'image/jpeg', 'image/png'];
+      if(acceptedImageTypes.indexOf(file.type) === 0){
+        throw new Error('Uploaded file is not supported.')
+      }
+      reader.readAsDataURL(file);
+    },
     handleScaleDown() {
       this.canvasScale += SCALE_STEP;
     },
     handleScaleUp() {
       this.canvasScale -= SCALE_STEP;
+      if(this.canvasScale <= 0.1) {
+        this.canvasScale = 0.1
+      }
     },
     handleWeightInput(weight, tileIndex) {
       const newValue = parseInt(weight);
@@ -320,7 +383,9 @@ export default {
       let randoms = [];
       for (let i = 0; i < tileset.length; i++) {
         let random = Math.floor(Math.random() * randomPool);
-        randomPool -= random;
+        if(this.cumulativeRandomization){
+          randomPool -= random;
+        }
         random = random ? random : 1;
         randoms.push(random);
       }

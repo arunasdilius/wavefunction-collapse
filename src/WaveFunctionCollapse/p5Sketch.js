@@ -29,6 +29,8 @@ class p5Sketch {
     }
 
     draw() {
+        this.p.noSmooth();
+        this.p.strokeCap(this.p.SQUARE);
         const cells = this.drawPreProcess(this.p);
         if (cells.length === 0) {
             throw new Error("There must be more than 0 cells");

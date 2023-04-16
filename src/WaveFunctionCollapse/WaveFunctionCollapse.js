@@ -9,8 +9,8 @@ class WaveFunctionCollapse {
         this.rows = rows;
         this.columns = columns;
         const totalCells = rows * columns;
+        const allTiles = this.prepareTiles(tiles);
         for (let i = 0; i < totalCells; i++) {
-            const allTiles = this.prepareTiles(tiles);
             this.cells.push(new RenderableCell(allTiles));
         }
     }
