@@ -1,4 +1,12 @@
 $primary: #00648c;
 $secondary: rgb(145, 12, 0);
 
+$input-btn-padding-y: .1rem !default;
+$input-btn-padding-x: .5rem !default;
+$form-label-margin-bottom: 0 !default;
+$font-size-base: 0.75rem !default; // Assumes the browser default, typically `16px`
+$border-radius: 0 !default;
+
 @import "~bootstrap/scss/bootstrap";
+
+

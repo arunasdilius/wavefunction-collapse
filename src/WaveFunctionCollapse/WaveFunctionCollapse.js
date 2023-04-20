@@ -4,10 +4,12 @@ class WaveFunctionCollapse {
     cells = [];
     rows = [];
     columns;
+    borderless = false;
 
-    constructor (rows, columns, tiles) {
+    constructor (rows, columns, tiles, borderless) {
         this.rows = rows;
         this.columns = columns;
+        this.borderless = borderless;
         const totalCells = rows * columns;
         const allTiles = this.prepareTiles(tiles);
         for (let i = 0; i < totalCells; i++) {
@@ -69,7 +71,7 @@ class WaveFunctionCollapse {
             for (let cellIndex in cellsToPropagate) {
                 let cellToPropagate = cellsToPropagate[cellIndex];
                 const neighbouringCells = this.getNeighbouringCells(cellToPropagate);
-                cellToPropagate.reduceEntropy(neighbouringCells);
+                cellToPropagate.reduceEntropy(neighbouringCells, this.borderless);
             }
             cellsToPropagate = this.getCellsToPropagate();
         }
@@ -86,7 +88,7 @@ class WaveFunctionCollapse {
         for (let cellIndex in cells) {
             const cell = cells[cellIndex];
             const neighbouringCells = this.getNeighbouringCells(cell);
-            cell.reduceEntropy(neighbouringCells);
+            cell.reduceEntropy(neighbouringCells, this.borderless);
             cell.collapse();
             for (let i = 0; i < neighbouringCells.length; i++) {
                 const neighbouringCell = neighbouringCells[i];

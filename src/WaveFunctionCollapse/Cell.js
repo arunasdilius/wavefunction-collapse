@@ -40,7 +40,7 @@ class Cell {
         this.possibleTiles = [];
     }
 
-    reduceEntropy(neighbouringCells) {
+    reduceEntropy(neighbouringCells, endlessEdges) {
         const originalPossibleTilesLength = this.possibleTiles.length;
         for (let i = 0; i < neighbouringCells.length; i++) {
             const neighbouringCell = neighbouringCells[i];
@@ -58,9 +58,12 @@ class Cell {
                     return possibleNeighbouringEdges.indexOf(possibleTile.getTranslatedEdges()[i]) !== -1;
                 });
             } else {
-                this.possibleTiles = this.possibleTiles.filter(function (possibleTile) {
-                    return possibleTile.getTranslatedEdges()[i] === 0;
-                });
+                console.log(endlessEdges);
+                if(!endlessEdges){
+                    this.possibleTiles = this.possibleTiles.filter(function (possibleTile) {
+                        return possibleTile.getTranslatedEdges()[i] === 0;
+                    });
+                }
             }
         }
         this.setPropagates(false);
